@@ -9,7 +9,7 @@ import { errorHandler } from "./middleware/index.js";
 import { generateTimedToken, sendEmail } from "./util/index.js";
 const app = express();
 
-
+dbConnect();
 
 
 // Define allowed origins based on environment
@@ -52,12 +52,14 @@ app.use(errorHandler);
 // const testActiveLink = generateTimedToken('activateAccount', '6a92e7cc5843e2b540094bd4', 60);
 // console.log("Test Activation Link:", testActiveLink);
 
-const startServer = async () => {
-  await dbConnect();
+// const startServer = async () => {
+//   await 
 
-  app.listen(PORT, () => {
+  
+// }
+app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   }); 
-}
 
-startServer();
+export default app;
+// startServer();
