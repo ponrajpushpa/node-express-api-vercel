@@ -9,8 +9,6 @@ import { errorHandler } from "./middleware/index.js";
 import { generateTimedToken, sendEmail } from "./util/index.js";
 const app = express();
 
-await dbConnect();
-
 // Define allowed origins based on environment
 const allowedOrigins = NODE_ENV === 'production'
     ? [process.env.FRONTEND_URL || 'https://yourdomain.com'] // Update with your production frontend URL
@@ -35,6 +33,18 @@ app.use(cors(corsOptions));
 
 app.use(cookieParser());
 app.use(express.json());
+
+// Ensure the database is connected before handling any request. On Vercel the
+// module can start before MongoDB is reachable, so we connect lazily per
+// request (using the cached connection) instead of at module load time.
+app.use(async (req, res, next) => {
+  try {
+    await dbConnect();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 // Temporary request logger to help debug cookies/headers
 app.use((req, res, next) => {
   console.log('Incoming request', req.method, req.path, 'cookies:', req.cookies, 'authorization:', req.headers.authorization);
@@ -57,10 +67,14 @@ app.use(errorHandler);
 app.get('/',(req, res)=>{
   res.json({data: "Hello world"});
 })
-// }
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  }); 
+
+// On Vercel the app runs as a serverless function, so we must NOT call
+// app.listen() — Vercel invokes the exported handler directly. Only start a
+// long-running server when running locally (e.g. `npm run dev`/`npm start`).
+if (!process.env.VERCEL) {
+  app.listen(PORT || 3000, () => {
+    console.log(`Server is running on port ${PORT || 3000}`);
+  });
+}
 
 export default app;
-// startServer();
