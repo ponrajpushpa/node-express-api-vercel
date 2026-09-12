@@ -9,26 +9,53 @@ import { errorHandler } from "./middleware/index.js";
 import { generateTimedToken, sendEmail } from "./util/index.js";
 const app = express();
 
+// Normalize an origin string by trimming whitespace and removing any trailing
+// slash, so "https://example.com/" and "https://example.com" are treated the
+// same and small config mistakes don't silently break CORS.
+const normalizeOrigin = (value) => (value || "").trim().replace(/\/+$/, "");
+
+// FRONTEND_URL may contain a single origin or a comma-separated list.
+const productionOrigins = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map(normalizeOrigin)
+    .filter(Boolean);
+
+const devOrigins = ['http://192.168.1.10:5173', 'http://localhost:5173'];
+
 // Define allowed origins based on environment
-const allowedOrigins = NODE_ENV === 'production'
-    ? [process.env.FRONTEND_URL ] // Update with your production frontend URL
-    : ['http://192.168.1.10:5173', 'http://localhost:5173'];
+const allowedOrigins = NODE_ENV === 'production' ? productionOrigins : devOrigins;
 
 const corsOptions = {
-    // 1. Specify exact domains allowed (NO trailing slashes)
-    origin: allowedOrigins,
-    
-    // 2. HTTP methods your frontend can use
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    
+    // 1. Reflect the request origin only when it is on the allow-list. Using a
+    //    function (instead of a static array) lets us normalize trailing
+    //    slashes and allow same-origin / server-to-server requests that send
+    //    no Origin header (e.g. curl, health checks).
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        const requestOrigin = normalizeOrigin(origin);
+        if (allowedOrigins.includes(requestOrigin)) {
+            return callback(null, true);
+        }
+
+        console.log('[v0] CORS blocked origin:', origin, 'allowed:', allowedOrigins);
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
+
+    // 2. HTTP methods your frontend can use (OPTIONS is required for preflight)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+
     // 3. Allowed headers
     allowedHeaders: ['Content-Type', 'Authorization'],
-    
+
     // 4. Allow credentials (cookies) to be sent with cross-origin requests
-    credentials: true 
+    credentials: true,
+
+    // 5. Cache preflight response for 24h to cut down on OPTIONS round-trips
+    maxAge: 86400,
 };
 
-// Apply CORS configuration
+// Apply CORS configuration (also handles OPTIONS preflight requests)
 app.use(cors(corsOptions));
 
 app.use(cookieParser());
