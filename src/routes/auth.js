@@ -9,7 +9,7 @@ import {
     forgotPassword,
     checkToken,
     resetPassword
-} from "../controllers/Auth.js";
+} from "../controllers/AuthController.js";
 const router = express.Router();
 
 router.post("/login", login);
