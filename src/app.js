@@ -11,7 +11,6 @@ const app = express();
 
 await dbConnect();
 
-
 // Define allowed origins based on environment
 const allowedOrigins = NODE_ENV === 'production'
     ? [process.env.FRONTEND_URL || 'https://yourdomain.com'] // Update with your production frontend URL
@@ -55,7 +54,9 @@ app.use(errorHandler);
 // const startServer = async () => {
 //   await 
 
-  
+app.get('/',(req, res)=>{
+  res.json({data: "Hello world"});
+})
 // }
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
