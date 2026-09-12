@@ -13,7 +13,7 @@ await dbConnect();
 
 // Define allowed origins based on environment
 const allowedOrigins = NODE_ENV === 'production'
-    ? [process.env.FRONTEND_URL || 'https://yourdomain.com'] // Update with your production frontend URL
+    ? [process.env.FRONTEND_URL ] // Update with your production frontend URL
     : ['http://192.168.1.10:5173', 'http://localhost:5173'];
 
 const corsOptions = {
