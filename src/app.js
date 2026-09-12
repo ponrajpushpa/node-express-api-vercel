@@ -9,7 +9,7 @@ import { errorHandler } from "./middleware/index.js";
 import { generateTimedToken, sendEmail } from "./util/index.js";
 const app = express();
 
-dbConnect();
+await dbConnect();
 
 
 // Define allowed origins based on environment
